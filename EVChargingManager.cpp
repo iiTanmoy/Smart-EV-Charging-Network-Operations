@@ -855,6 +855,7 @@ void EVChargingManager::searchAndBook(const std::string& userID) {
     if (booking != 0) {
         station->setStatus(Station::Occupied);
         bookings.push_back(booking);
+        cout << "Booking created: " << bid << "\n";
         saveBookings();
         saveStations();
     }
@@ -874,15 +875,20 @@ void EVChargingManager::viewMyBookings(const std::string& userID) const {
 }
 
 void EVChargingManager::viewMyActiveBooking(const std::string& userID) const {
+    bool found = false;
     for (std::vector<Booking*>::const_iterator it = bookings.begin(); it != bookings.end(); ++it) {
-        if ((*it)->getUser() != 0 && (*it)->getUser()->getUserID() == userID && (*it)->isActive()) {
-            std::cout << "Active Booking: " << (*it)->getBookingID() << " | Station: "
-                      << ((*it)->getStation() ? (*it)->getStation()->getStationID() : "")
-                      << " | Duration: " << (*it)->getSlotDuration() << " mins" << std::endl;
-            return;
+        if ((*it)->getUser() != 0 && (*it)->getUser()->getUserID() == userID) {
+            int st = (*it)->getStatus();
+            if (st == Booking::Booked || st == Booking::Active) {
+                cout << "Booking: " << (*it)->getBookingID() << " | Station: "
+                     << ((*it)->getStation() ? (*it)->getStation()->getStationID() : "")
+                     << " | Status: " << (st == Booking::Active ? "Active" : "Booked")
+                     << " | Start: " << (*it)->getStartTime() << " | Duration: " << (*it)->getSlotDuration() << " mins\n";
+                found = true;
+            }
         }
     }
-    std::cout << "No active booking found.\n";
+    if (!found) cout << "No active or upcoming bookings found.\n";
 }
 
 void EVChargingManager::viewMyHistory(const std::string& userID) const {
