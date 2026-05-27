@@ -1,6 +1,7 @@
 #include "Station.h"
 #include "User.h"
 #include <iostream>
+using namespace std;
 
 Station::Station(const std::string& id, const std::string& locationName,
                  double latitude, double longitude, double powerRating,

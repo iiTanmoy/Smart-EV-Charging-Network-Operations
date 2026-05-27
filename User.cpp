@@ -1,5 +1,6 @@
 #include "User.h"
 #include <iostream>
+using namespace std;
 
 User::User(const std::string& id, const std::string& name,
            const std::string& contact, double walletBalance,

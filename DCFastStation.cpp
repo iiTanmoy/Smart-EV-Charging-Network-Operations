@@ -1,6 +1,7 @@
 #include "DCFastStation.h"
 #include "User.h"
 #include <iostream>
+using namespace std;
 
 DCFastStation::DCFastStation(const std::string& id, const std::string& locationName,
                              double latitude, double longitude, double powerRating,

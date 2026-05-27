@@ -1,5 +1,6 @@
 #include "FleetUser.h"
 #include <iostream>
+using namespace std;
 
 FleetUser::FleetUser(const std::string& id, const std::string& name,
                      const std::string& contact, double walletBalance,

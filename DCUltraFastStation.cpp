@@ -1,6 +1,7 @@
 #include "DCUltraFastStation.h"
 #include "User.h"
 #include <iostream>
+using namespace std;
 
 DCUltraFastStation::DCUltraFastStation(const std::string& id,
                                        const std::string& locationName,

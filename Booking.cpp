@@ -1,6 +1,7 @@
 #include "Booking.h"
 #include "Station.h"
 #include "User.h"
+using namespace std;
 
 Booking::Booking(const std::string& bookingID, Station* station, User* user,
                  int slotDuration, time_t startTime, time_t endTime, int status)

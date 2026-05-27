@@ -1,5 +1,6 @@
 #include "RegularUser.h"
 #include <iostream>
+using namespace std;
 
 RegularUser::RegularUser(const std::string& id, const std::string& name,
                          const std::string& contact, double walletBalance,

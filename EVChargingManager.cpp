@@ -12,6 +12,8 @@
 #include <ctime>
 #include <algorithm>
 
+using namespace std;
+
 EVChargingManager::EVChargingManager()
     : stationsFile("stations.csv"), usersFile("users.csv"),
       bookingsFile("bookings.csv"), sessionsFile("sessions.log"),
@@ -322,14 +324,62 @@ void EVChargingManager::logSession(const ChargingSession& session) {
 }
 
 void EVChargingManager::backupSystem() const {
-    std::ofstream out(backupFile.c_str(), std::ios::binary);
-    if (!out.is_open()) {
-        return;
+    std::ostringstream ss;
+    ss << "STATIONS\n";
+    for (std::map<std::string, Station*>::const_iterator it = stations.begin(); it != stations.end(); ++it) {
+        it->second->saveToCsv(ss);
     }
+    ss << "USERS\n";
+    for (std::map<std::string, User*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+        it->second->saveToCsv(ss);
+    }
+    ss << "BOOKINGS\n";
+    for (std::vector<Booking*>::const_iterator it = bookings.begin(); it != bookings.end(); ++it) {
+        (*it)->saveToCsv(ss);
+    }
+    ss << "SESSIONS\n";
+    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
+        it->logSession(ss);
+    }
+    std::string data = ss.str();
+    std::ofstream out(backupFile.c_str(), std::ios::binary);
+    if (!out.is_open()) return;
+    out.write(data.c_str(), data.size());
     out.close();
 }
 
 void EVChargingManager::restoreSystem() {
+    std::ifstream in(backupFile.c_str(), std::ios::binary);
+    if (!in.is_open()) return;
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    std::string data = ss.str();
+    in.close();
+    size_t p1 = data.find("STATIONS\n");
+    size_t p2 = data.find("USERS\n");
+    size_t p3 = data.find("BOOKINGS\n");
+    size_t p4 = data.find("SESSIONS\n");
+    if (p1 == std::string::npos || p2 == std::string::npos || p3 == std::string::npos || p4 == std::string::npos) return;
+    std::string stationsData = data.substr(p1 + 9, p2 - (p1 + 9));
+    std::string usersData = data.substr(p2 + 6, p3 - (p2 + 6));
+    std::string bookingsData = data.substr(p3 + 9, p4 - (p3 + 9));
+    std::string sessionsData = data.substr(p4 + 9);
+    std::ofstream out;
+    out.open(stationsFile.c_str()); out << stationsData; out.close();
+    out.open(usersFile.c_str()); out << usersData; out.close();
+    out.open(bookingsFile.c_str()); out << bookingsData; out.close();
+    out.open(sessionsFile.c_str()); out << sessionsData; out.close();
+    // clear current state
+    for (std::map<std::string, Station*>::iterator it = stations.begin(); it != stations.end(); ++it) delete it->second;
+    stations.clear();
+    for (std::map<std::string, User*>::iterator it = users.begin(); it != users.end(); ++it) delete it->second;
+    users.clear();
+    for (std::vector<Booking*>::iterator it = bookings.begin(); it != bookings.end(); ++it) delete *it;
+    bookings.clear();
+    while (!activeBookings.empty()) activeBookings.pop();
+    completedSessions.clear();
+    // reload
+    loadData();
 }
 
 Station* EVChargingManager::findStation(const std::string& stationID) const {
@@ -469,8 +519,10 @@ void EVChargingManager::activeBookingMenu() {
             std::string id = readLine("Booking ID: ");
             Booking* booking = findBooking(id);
             if (booking != 0) {
-                booking->endSession(std::time(0));
+                booking->cancelBooking();
+                if (booking->getStation() != 0) booking->getStation()->setStatus(Station::Available);
                 saveBookings();
+                saveStations();
             }
         } else if (choice == 3) {
             std::string id = readLine("Booking ID: ");
@@ -504,7 +556,7 @@ void EVChargingManager::userPortal() {
             searchAndBook(id);
         } else if (choice == 4) {
             std::string id = readLine("User ID: ");
-            viewMyActiveBooking(id);
+            viewMyBookings(id);
             pause();
         } else if (choice == 5) {
             std::string id = readLine("User ID: ");

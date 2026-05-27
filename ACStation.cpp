@@ -1,6 +1,7 @@
 #include "ACStation.h"
 #include "User.h"
 #include <iostream>
+using namespace std;
 
 ACStation::ACStation(const std::string& id, const std::string& locationName,
                      double latitude, double longitude, double powerRating,

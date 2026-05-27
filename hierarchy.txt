@@ -1,0 +1,161 @@
+1. Station Hierarchy (Inheritance & Polymorphism)
+	Place Class Diagram
+
++-------------------+
+|     <<abstract>>  |
+|      Station      |
++-------------------+
+| - stationID: std::string     |
+| - location: std::string      |
+| - latitude: double           |
+| - longitude: double          |
+| - status: int (0=Available,1=Occupied,2=Faulty) |
+| - powerRating: double        |
++-------------------+
+| + getStationID() const       |
+| + getStatus() const          |
+| + setStatus(int)             |
+| + isAvailable() const        |
+| + calculatePricePerMin(User*) : double  (pure virtual) |
+| + displayInfo() const        (virtual)   |
+| + saveToFile(std::ofstream&) |
+| + loadFromFile(std::ifstream&) |
++-------------------+
+          ^
+          | (public inheritance)
+          |
+   +------+------+------+ 
+   |             |      |
+   v             v      v
++-----------+ +-----------+ +-----------------+
+| ACStation | | DCFastStation | DCUltraFastStation |
++-----------+ +-----------+ +-----------------+
+| - maxSlots: int          | - maxPower: double   | - ultraPower: double |
++--------------------------+----------------------+---------------------+
+| + calculatePricePerMin() | + calculatePricePerMin() | + calculatePricePerMin() |
+| + displayInfo()          | + displayInfo()          | + displayInfo()         |
++--------------------------+----------------------+---------------------+
+Key Points (C++98):
+•	Station is an abstract base class with at least one pure virtual function (calculatePricePerMin).
+•	Derived classes override calculatePricePerMin and displayInfo for runtime polymorphism.
+•	All classes use encapsulation (private data members, public getters/setters).
+•	File handling methods (saveToFile, loadFromFile) are implemented in each class for persistence.
+2. User Hierarchy (Inheritance & Polymorphism)
+	Place Class Diagram
+	+-------------------+
+|     <<abstract>>  |
+|       User        |
++-------------------+
+| - userID: std::string      |
+| - name: std::string        |
+| - contact: std::string     |
+| - walletBalance: double    |
+| - totalSessions: int       |
++-------------------+
+| + getUserID() const        |
+| + getTier() const : std::string (pure virtual) |
+| + calculateDiscount(double basePrice) : double (virtual) |
+| + addSession()             |
+| + displayInfo() const      |
+| + saveToFile(...)          |
+| + loadFromFile(...)        |
++-------------------+
+          ^
+          | 
+   +------+------+ 
+   |             | 
+   v             v
++-------------+ +-------------+
+| RegularUser | | PremiumUser |
++-------------+ +-------------+
+| (no extra)  | - freeMinutes: int |
++-------------+ +-------------+
+                |
+                v
+          +-------------+
+          | FleetUser   |
+          +-------------+
+          | - fleetID: std::string |
+          | - companyName: std::string |
+          +-------------+
+Key Points:
+•	User is abstract.
+•	calculateDiscount and getTier are virtual → polymorphic pricing & priority.
+•	PremiumUser and FleetUser provide different discount logic.
+3. Booking & Session Classes (Composition & Association)
+		Place Class Diagram
++-------------------+       1          *       +-------------------+
+|      Booking      |---------------------------|       User        |
++-------------------+  (owns/uses)               +-------------------+
+| - bookingID: std::string   |
+| - station: Station*        |  (association)
+| - user: User*              |
+| - startTime: time_t        |
+| - endTime: time_t          |
+| - slotDuration: int (minutes) |
++-------------------+
+| + startSession()           |
+| + endSession()             |
+| + calculateCost() : double |
+| + isActive() const         |
+| + saveToFile(...)          |
++-------------------+
+          ^
+          |
+          | (public inheritance)
+          |
+     +-------------------+
+     | ChargingSession   |
+     +-------------------+
+     | - energyConsumed: double   |
+     | - finalCost: double        |
+     +-------------------+
+     | + calculateCost() override |
+     | + logSession()             |
+     +-------------------+
+Relationships:
+•	Composition: Booking contains pointers to Station and User.
+•	Association: Many bookings per user and per station.
+•	ChargingSession inherits from Booking and adds session-specific behavior (polymorphism in calculateCost).
+4. Main System / Manager Class (STL Heavy – Facade Pattern Style)
+		Place Class Diagrams
+
++---------------------------+
+|     EVChargingManager     |
++---------------------------+
+| - stations: std::map<std::string, Station*>   |
+| - users: std::map<std::string, User*>         |
+| - activeBookings: std::queue<Booking*>        |
+| - completedSessions: std::vector<ChargingSession> |
+| - logFileName: std::string                    |
++---------------------------+
+| + loadAllData()                           |
+| + saveAllData()                           |
+| + addStation(Station*)                    |
+| + addUser(User*)                          |
+| + findAvailableStation(std::string type, double lat, double lon) : Station* |
+| + bookSlot(std::string userID, std::string stationID, int minutes) : bool |
+| + startCharging(std::string bookingID)    |
+| + endCharging(std::string bookingID)      |
+| + generateRevenueReport() const           |
+| + findTopRevenueStations(int topN) : std::vector<Station*> |
+| + recommendStationsForUser(std::string userID) |
+| + backupSystem(const std::string& backupFile) |
+| + restoreSystem(const std::string& backupFile) |
++---------------------------+
+STL Usage (C++98 compliant):
+•	std::map<std::string, Station*> → fast lookup by ID
+•	std::map<std::string, User*> → user management
+•	std::queue<Booking*> → FIFO for active bookings
+•	std::vector<ChargingSession> → completed sessions (with std::sort, std::find_if, std::accumulate for analytics)
+•	Algorithms: std::sort, std::find_if, std::for_each, std::remove_if
+5. Overall System Relationships (High-Level View)
+	EVChargingManager  (1) -----------------*  Station (abstract)
+                       | 
+                       | (composition)
+                       |
+                       +-----------------*  User (abstract)
+                       |
+                       +-----------------*  Booking
+                                             |
+                                             +---- ChargingSession

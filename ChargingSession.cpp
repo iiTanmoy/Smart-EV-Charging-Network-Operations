@@ -3,6 +3,8 @@
 #include "User.h"
 #include <iostream>
 
+using namespace std;
+
 ChargingSession::ChargingSession(const std::string& bookingID, Station* station,
                                  User* user, int slotDuration, time_t startTime,
                                  time_t endTime, int status,
@@ -27,7 +29,7 @@ double ChargingSession::calculateCost() const {
     return cost > 0.0 ? cost : finalCost;
 }
 
-void ChargingSession::logSession(std::ofstream& out) const {
+void ChargingSession::logSession(std::ostream& out) const {
     if (getStation() == 0 || getUser() == 0) {
         return;
     }

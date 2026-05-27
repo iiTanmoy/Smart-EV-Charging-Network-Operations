@@ -1,5 +1,6 @@
 #include "PremiumUser.h"
 #include <iostream>
+using namespace std;
 
 PremiumUser::PremiumUser(const std::string& id, const std::string& name,
                          const std::string& contact, double walletBalance,

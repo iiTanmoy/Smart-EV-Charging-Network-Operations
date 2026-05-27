@@ -14,7 +14,7 @@ public:
     double getFinalCost() const;
 
     virtual double calculateCost() const;
-    void logSession(std::ofstream& out) const;
+    void logSession(std::ostream& out) const;
 
 private:
     double energyConsumed;

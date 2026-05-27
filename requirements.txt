@@ -1,0 +1,86 @@
+1. Introduction
+The system shall be a console-based, menu-driven application that simulates the complete operations of ChargeGrid Mobility’s EV charging network. All implementation must strictly adhere to C++98 standard, using only features available in ISO/IEC 14882:1998.
+2. Functional Requirements
+2.1 Entity Management (OOPS Core – Mandatory)
+The system shall model the following business entities using proper OOPS principles (encapsulation, inheritance, polymorphism, and abstraction):
+•	FR-1.1 Charging Station Hierarchy
+o	Base class Station (abstract) with pure virtual functions where required.
+o	Derived classes: ACStation, DCFastStation, DCUltraFastStation.
+o	Each station must support: unique ID, location (latitude/longitude), status (Available/Occupied/Faulty/Maintenance), current power rating, and supported user tiers.
+•	FR-1.2 User Hierarchy
+o	Base class User with virtual functions for pricing and priority.
+o	Derived classes: RegularUser, PremiumUser, FleetUser.
+o	Each user shall store: user ID, name, contact, subscription tier, total sessions, and wallet balance (for simulation).
+•	FR-1.3 Booking & Session Management
+o	Class Booking (composition with Station and User).
+o	Class ChargingSession (derived from Booking) with runtime polymorphism for pricing calculation.
+o	Support start/end session with simulated timer.
+2.2 Data Storage & Persistence (File Handling – Mandatory)
+•	FR-2.1 All entities shall be persisted using file handling (<fstream> only). Required files (text/CSV for readability, binary optional for sessions):
+o	stations.csv
+o	users.csv
+o	bookings.csv
+o	sessions.log (append-only transaction log)
+o	backup.dat (binary backup of entire system state)
+•	FR-2.2 On every CRUD operation (add, update, delete, book, start/end session), the system must save changes to the respective file(s) immediately (atomic write where possible using temporary file + rename technique).
+•	FR-2.3 On startup, the system shall load all data from files into STL containers.
+•	FR-2.4 Provide explicit “Backup” and “Restore” functions using binary file I/O.
+2.3 Data Operations (STL – Mandatory)
+All data management must use STL containers and algorithms exclusively (no raw arrays, no manual linked lists):
+•	FR-3.1 Use std::vector<Station*> or std::map<std::string, Station*> for stations (key = station ID).
+•	FR-3.2 Use std::map<std::string, User*> for users.
+•	FR-3.3 Use std::queue<Booking*> for active bookings and std::vector<ChargingSession> for completed sessions.
+•	FR-3.4 Implement search, filter, and sort using STL algorithms:
+o	std::find_if, std::sort, std::for_each, std::remove_if, std::copy_if (simulated via C++98 compatible patterns).
+o	Example queries: “all available DC Ultra-Fast stations”, “top 10 revenue stations”, “users inactive for >30 days”.
+2.4 Core Modules / Use Cases
+Admin / Operator Module
+•	FR-4.1 Add / Remove / Update stations
+•	FR-4.2 View real-time station occupancy (using STL iterators)
+•	FR-4.3 Generate analytics reports (revenue, utilization %, peak hours) using STL algorithms
+User Simulation Module
+•	FR-5.1 Register new user (choose tier)
+•	FR-5.2 Login (simple ID/password simulation)
+•	FR-5.3 Search & book available slot (with conflict check using STL find_if)
+•	FR-5.4 View booking history and completed sessions
+•	FR-5.5 Cancel booking (with file update)
+Session Management Module
+•	FR-6.1 Start charging session (simulate timer using time.h + loop)
+•	FR-6.2 End session with dynamic pricing (polymorphic calculateCost())
+•	FR-6.3 Log every session to sessions.log
+Search & Recommendation Engine
+•	FR-7.1 Nearest available station search (simple Euclidean distance using stored lat/long)
+•	FR-7.2 Recommendation based on user tier and station type
+Analytics Engine
+•	FR-8.1 Monthly revenue summary
+•	FR-8.2 Station utilization report
+•	FR-8.3 Predictive idle-time analysis (using STL count_if and accumulate)
+2.5 Input Validation & Error Handling
+•	All inputs shall be validated (no crashes on invalid data).
+•	File I/O failures shall be handled gracefully with meaningful console messages.
+•	Use exceptions (<exception>) where appropriate (C++98 compliant).
+3. System Requirements (Non-Functional)
+3.1 Language & Compiler Constraints
+•	Must compile and run with any C++98 compliant compiler (g++ with -std=c++98 -Wall -pedantic).
+•	Prohibited features (C++11+): auto, unordered_map, nullptr, range-based for, lambda, std::unordered_*, std::array, etc.
+•	Use std::map for associative lookup (instead of unordered_map).
+•	Use std::string, std::vector, std::map, std::queue, std::set, etc. only.
+3.2 Performance Requirements
+•	Shall handle minimum 10,000 simulated records (stations + users + sessions) efficiently using STL containers.
+•	Search operations (FR-3.4 and FR-7.1) must complete in < 1 second on standard hardware (O(log N) or better via STL map/sort).
+3.3 Usability
+•	Menu-driven console interface (clear numbered options).
+•	Clear prompts and error messages.
+•	Session timer simulation shall be interruptible via keyboard input.
+3.4 Reliability & Maintainability
+•	All file operations must be exception-safe.
+•	Code must be modular (separate header/source files for each class).
+•	Follow clean OOPS design so new station types or user tiers can be added by inheriting from base classes with zero change to existing code.
+3.5 Hardware / Software Requirements
+•	Any system capable of running C++98 compiler.
+•	No external libraries or databases allowed (pure standard C++98 + STL + <fstream>, <iostream>, <string>, <vector>, <map>, <queue>, <algorithm>, <ctime>, <iomanip>).
+3.6 Deliverables
+•	Complete source code (multiple .cpp + .h files)
+•	README with compilation instructions (g++ -std=c++98 *.cpp -o EVPlatform)
+•	Sample data files (stations.csv, users.csv, etc.)
+•	Test cases demonstrating all OOPS, STL, and File Handling usage
