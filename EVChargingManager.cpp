@@ -272,6 +272,7 @@ void EVChargingManager::loadBookings() {
     if (!loadFile(bookingsFile, lines)) {
         return;
     }
+    std::map<std::string, bool> stationOccupied;
     for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
         std::string line = *it;
         std::vector<std::string> parts;
@@ -295,12 +296,18 @@ void EVChargingManager::loadBookings() {
         Booking* booking = createBooking(bid, station, user, duration, start, end, status);
         if (booking != 0) {
             bookings.push_back(booking);
-            if (booking->getStatus() == Booking::Active) {
-                activeBookings.push(booking);
-                if (station != 0) {
-                    station->setStatus(Station::Occupied);
-                }
+            if ((booking->getStatus() == Booking::Active || booking->getStatus() == Booking::Booked) && station != 0) {
+                stationOccupied[station->getStationID()] = true;
             }
+        }
+    }
+    for (std::map<std::string, Station*>::iterator it = stations.begin(); it != stations.end(); ++it) {
+        const std::string& sid = it->first;
+        Station* station = it->second;
+        if (stationOccupied.find(sid) != stationOccupied.end()) {
+            station->setStatus(Station::Occupied);
+        } else if (station->getStatus() != Station::Faulty && station->getStatus() != Station::Maintenance) {
+            station->setStatus(Station::Available);
         }
     }
 }
@@ -930,6 +937,7 @@ void EVChargingManager::searchAndBook(const std::string& userID) {
     std::string sid = readLine("Station ID: ");
     Station* station = findStation(sid);
     if (station == 0 || !station->isAvailable()) {
+        std::cout << "Selected station is not available or invalid. Please choose another station.\n";
         return;
     }
     int minutes = readInt("Duration minutes: ", 1, 240);
