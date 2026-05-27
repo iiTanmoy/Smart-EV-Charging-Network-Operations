@@ -838,6 +838,7 @@ void EVChargingManager::loginUser() {
         return;
     }
     while (true) {
+        std::cout << "\n========================================\n";
         std::cout << "1. Search Available Stations (with Recommendation)\n";
         std::cout << "2. Book a Charging Slot\n";
         std::cout << "3. View My Active Booking\n";
@@ -845,6 +846,7 @@ void EVChargingManager::loginUser() {
         std::cout << "5. End Charging Session\n";
         std::cout << "6. View My History\n";
         std::cout << "7. Logout\n";
+        std::cout << "========================================\n";
         int choice = readInt("Enter your choice: ", 1, 7);
         if (choice == 1) {
             availableStationsForUser(id);
@@ -895,7 +897,15 @@ void EVChargingManager::searchAndBook(const std::string& userID) {
         }
     }
     if (available.empty()) {
-        std::cout << "No available stations match the requested type.\n";
+        if (type == "AC") {
+            std::cout << "No AC station is currently available.\n";
+        } else if (type == "DC") {
+            std::cout << "No DC station is currently available.\n";
+        } else if (type == "") {
+            std::cout << "No charging stations are currently available.\n";
+        } else {
+            std::cout << "No " << type << " station is currently available.\n";
+        }
         return;
     }
     std::string preferred;
@@ -938,7 +948,7 @@ void EVChargingManager::searchAndBook(const std::string& userID) {
     if (booking != 0) {
         station->setStatus(Station::Occupied);
         bookings.push_back(booking);
-        cout << "Booking created: " << bid << "\n";
+        cout << "Successfully booked the slot. Booking number: " << bid << "\n";
         saveBookings();
         saveStations();
     }
