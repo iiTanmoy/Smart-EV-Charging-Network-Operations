@@ -25,8 +25,24 @@ double ChargingSession::getFinalCost() const {
 }
 
 double ChargingSession::calculateCost() const {
-    double cost = Booking::calculateCost();
-    return cost > 0.0 ? cost : finalCost;
+    if (getStation() == 0 || getUser() == 0) {
+        return finalCost;
+    }
+    double actualMinutes = difftime(getEndTime(), getStartTime()) / 60.0;
+    if (actualMinutes <= 0.0) {
+        actualMinutes = getSlotDuration();
+    }
+    if (actualMinutes < 1.0) {
+        actualMinutes = 1.0;
+    }
+    double pricePerMin = getStation()->calculatePricePerMin(getUser());
+    double baseCost = pricePerMin * actualMinutes;
+    double discount = getUser()->calculateDiscount(baseCost);
+    double calculated = baseCost - discount;
+    if (calculated <= 0.0) {
+        return finalCost;
+    }
+    return calculated;
 }
 
 void ChargingSession::logSession(std::ostream& out) const {

@@ -66,13 +66,14 @@ bool Booking::isActive() const {
 }
 
 double Booking::calculateCost() const {
-    if (station == 0 || user == 0) {
+    if (station == 0 || user == 0 || slotDuration <= 0) {
         return 0.0;
     }
     double pricePerMin = station->calculatePricePerMin(user);
     double baseCost = pricePerMin * slotDuration;
     double discount = user->calculateDiscount(baseCost);
-    return baseCost - discount;
+    double total = baseCost - discount;
+    return total < 0.0 ? 0.0 : total;
 }
 
 void Booking::saveToCsv(std::ostream& out) const {

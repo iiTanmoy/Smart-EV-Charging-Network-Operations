@@ -16,6 +16,46 @@ using namespace std;
 
 static bool cmpRev(const pair<string,double>& a, const pair<string,double>& b) { return a.second > b.second; }
 
+struct MonthlyRevenueCounter {
+    int month;
+    int year;
+    double total;
+    MonthlyRevenueCounter(int m, int y) : month(m), year(y), total(0.0) {}
+    void operator()(const ChargingSession& session) {
+        if (session.getStation() == 0) {
+            return;
+        }
+        time_t endTime = session.getEndTime();
+        struct tm* tmv = localtime(&endTime);
+        if (tmv != 0 && tmv->tm_mon == month && tmv->tm_year == year) {
+            total += session.getFinalCost();
+        }
+    }
+};
+
+struct StationSessionCount {
+    std::string stationID;
+    StationSessionCount(const std::string& id) : stationID(id) {}
+    bool operator()(const ChargingSession& session) const {
+        return session.getStation() != 0 && session.getStation()->getStationID() == stationID;
+    }
+};
+
+struct HourCounter {
+    int counts[24];
+    HourCounter() { for (int i = 0; i < 24; ++i) counts[i] = 0; }
+    void operator()(const ChargingSession& session) {
+        time_t t = session.getStartTime();
+        struct tm* tmv = localtime(&t);
+        if (tmv != 0) {
+            int h = tmv->tm_hour;
+            if (h >= 0 && h < 24) {
+                ++counts[h];
+            }
+        }
+    }
+};
+
 EVChargingManager::EVChargingManager()
     : stationsFile("stations.csv"), usersFile("users.csv"),
       bookingsFile("bookings.csv"), sessionsFile("sessions.log"),
@@ -266,6 +306,38 @@ void EVChargingManager::loadBookings() {
 }
 
 void EVChargingManager::loadSessionLog() {
+    std::ifstream in(sessionsFile.c_str());
+    if (!in.is_open()) {
+        return;
+    }
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.find("SESSION,") != 0) {
+            continue;
+        }
+        std::string payload = line.substr(8);
+        std::vector<std::string> parts;
+        std::string token;
+        std::istringstream ss(payload);
+        while (std::getline(ss, token, ',')) {
+            parts.push_back(token);
+        }
+        if (parts.size() < 9) {
+            continue;
+        }
+        std::string bid = parts[0];
+        std::string uid = parts[1];
+        std::string sid = parts[2];
+        time_t start = (time_t)atol(parts[4].c_str());
+        time_t end = (time_t)atol(parts[5].c_str());
+        double energy = atof(parts[6].c_str());
+        double finalCost = atof(parts[7].c_str());
+        Station* station = findStation(sid);
+        User* user = findUser(uid);
+        ChargingSession session(bid, station, user, 0, start, end, Booking::Completed, energy, finalCost);
+        completedSessions.push_back(session);
+    }
+    in.close();
 }
 
 void EVChargingManager::saveStations() {
@@ -954,16 +1026,21 @@ void EVChargingManager::endSessionForUser(const std::string& userID) {
         if (booking->getStation() != 0) {
             booking->getStation()->setStatus(Station::Available);
         }
-        double cost = booking->calculateCost();
         double energy = 0.0;
-        if (booking->getStation() != 0) {
-            energy = booking->getStation()->getPowerRating() * (double)booking->getSlotDuration() / 60.0;
+        double actualMinutes = difftime(booking->getEndTime(), booking->getStartTime()) / 60.0;
+        if (actualMinutes <= 0.0) {
+            actualMinutes = booking->getSlotDuration();
         }
-        ChargingSession session(booking->getBookingID(), booking->getStation(), booking->getUser(), booking->getSlotDuration(), booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, cost);
+        if (booking->getStation() != 0) {
+            energy = booking->getStation()->getPowerRating() * actualMinutes / 60.0;
+        }
+        ChargingSession tempSession(booking->getBookingID(), booking->getStation(), booking->getUser(), booking->getSlotDuration(), booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, booking->calculateCost());
+        double finalCost = tempSession.calculateCost();
+        ChargingSession session(booking->getBookingID(), booking->getStation(), booking->getUser(), booking->getSlotDuration(), booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, finalCost);
         completedSessions.push_back(session);
         // deduct from wallet
         if (booking->getUser() != 0) {
-            booking->getUser()->adjustWallet(-cost);
+            booking->getUser()->adjustWallet(-finalCost);
         }
         logSession(session);
         saveBookings();
@@ -997,27 +1074,23 @@ void EVChargingManager::availableStationsForUser(const std::string& userID) cons
 }
 
 void EVChargingManager::revenueSummary() const {
-    double total = 0.0;
-    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
-        total += it->getFinalCost();
-    }
-    cout << "Total revenue (all time): " << total << endl;
+    time_t now = time(0);
+    struct tm* nowtm = localtime(&now);
+    int currentMonth = nowtm ? nowtm->tm_mon : 0;
+    int currentYear = nowtm ? nowtm->tm_year : 0;
+    MonthlyRevenueCounter counter(currentMonth, currentYear);
+    std::for_each(completedSessions.begin(), completedSessions.end(), counter);
+    cout << "Total revenue (current month): " << counter.total << endl;
 }
 
 void EVChargingManager::utilizationReport() const {
-    // For each station, show total sessions and percent of total sessions
-    std::map<std::string, int> counts;
-    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
-        std::string sid = it->getStation() ? it->getStation()->getStationID() : "";
-        if (sid != "") counts[sid]++;
-    }
     int totalSessions = completedSessions.size();
     for (std::map<std::string, Station*>::const_iterator it = stations.begin(); it != stations.end(); ++it) {
-        int c = counts[it->first];
-        double pct = totalSessions > 0 ? (double)c * 100.0 / (double)totalSessions : 0.0;
+        int sessionCount = std::count_if(completedSessions.begin(), completedSessions.end(), StationSessionCount(it->first));
+        double pct = totalSessions > 0 ? (double)sessionCount * 100.0 / (double)totalSessions : 0.0;
         cout << it->first << " | ";
         it->second->displayInfo();
-        cout << "  Sessions: " << c << " | Utilization%: " << pct << endl;
+        cout << "  Sessions: " << sessionCount << " | Utilization%: " << pct << endl;
     }
 }
 
@@ -1025,10 +1098,14 @@ void EVChargingManager::topRevenueStations() const {
     std::map<std::string, double> rev;
     for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
         std::string sid = it->getStation() ? it->getStation()->getStationID() : "";
-        if (sid != "") rev[sid] += it->getFinalCost();
+        if (sid != "") {
+            rev[sid] += it->getFinalCost();
+        }
     }
     std::vector<std::pair<std::string, double> > list;
-    for (std::map<std::string, double>::const_iterator it = rev.begin(); it != rev.end(); ++it) list.push_back(*it);
+    for (std::map<std::string, double>::const_iterator it = rev.begin(); it != rev.end(); ++it) {
+        list.push_back(*it);
+    }
     sort(list.begin(), list.end(), cmpRev);
     int n = 0;
     for (std::vector<std::pair<std::string,double> >::const_iterator it = list.begin(); it != list.end() && n < 10; ++it, ++n) {
@@ -1037,38 +1114,41 @@ void EVChargingManager::topRevenueStations() const {
 }
 
 void EVChargingManager::inactiveUsers() const {
-    // users with no session in last 30 days
     time_t now = time(0);
     std::map<std::string, time_t> last;
     for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
         std::string uid = it->getUser() ? it->getUser()->getUserID() : "";
         if (uid != "") {
-            time_t t = it->getEndTime();
-            if (last.find(uid) == last.end() || last[uid] < t) last[uid] = t;
+            time_t end = it->getEndTime();
+            if (last.find(uid) == last.end() || last[uid] < end) {
+                last[uid] = end;
+            }
         }
     }
-    const time_t THIRTY = 30*24*3600;
+    const time_t THIRTY_DAYS = 30 * 24 * 3600;
     for (std::map<std::string, User*>::const_iterator it = users.begin(); it != users.end(); ++it) {
         std::string uid = it->first;
-        if (last.find(uid) == last.end() || (now - last[uid]) > THIRTY) {
-            cout << "Inactive: " << uid << " | "; it->second->displayInfo();
+        if (last.find(uid) == last.end() || (now - last[uid]) > THIRTY_DAYS) {
+            cout << "Inactive: " << uid << " | ";
+            it->second->displayInfo();
         }
     }
 }
 
 void EVChargingManager::peakHourAnalysis() const {
-    int counts[24]; for (int i=0;i<24;i++) counts[i]=0;
-    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
-        time_t t = it->getStartTime();
-        struct tm tmv;
-        localtime_r(&t, &tmv);
-        int h = tmv.tm_hour;
-        if (h>=0 && h<24) counts[h]++;
-    }
-    int maxc=0; for (int i=0;i<24;i++) if (counts[i]>maxc) maxc=counts[i];
+    HourCounter counter;
+    std::for_each(completedSessions.begin(), completedSessions.end(), counter);
+    int maxCount = 0;
     cout << "Peak hours (hour:count)\n";
-    for (int i=0;i<24;i++) if (counts[i]>0) cout << i << ":" << counts[i] << "\n";
-    cout << "Top peak count: " << maxc << "\n";
+    for (int i = 0; i < 24; ++i) {
+        if (counter.counts[i] > 0) {
+            cout << i << ":" << counter.counts[i] << "\n";
+            if (counter.counts[i] > maxCount) {
+                maxCount = counter.counts[i];
+            }
+        }
+    }
+    cout << "Top peak count: " << maxCount << "\n";
 }
 
 void EVChargingManager::exportReports() const {
