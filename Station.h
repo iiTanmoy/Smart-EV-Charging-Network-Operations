@@ -32,6 +32,7 @@ public:
     bool isAvailable() const;
 
     virtual double calculatePricePerMin(const User* user) const = 0;
+    virtual std::string getType() const = 0;
     virtual void displayInfo() const;
     virtual void saveToCsv(std::ostream& out) const;
 

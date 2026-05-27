@@ -12,8 +12,7 @@ public:
     virtual ~DCFastStation();
 
     double getMaxPower() const;
-    virtual double calculatePricePerMin(const User* user) const;
-    virtual void displayInfo() const;
+    virtual double calculatePricePerMin(const User* user) const;    virtual std::string getType() const;    virtual void displayInfo() const;
     virtual void saveToCsv(std::ostream& out) const;
 
 private:

@@ -52,6 +52,14 @@ void Booking::endSession(time_t endTime) {
     }
 }
 
+void Booking::setStatus(int newStatus) {
+    status = newStatus;
+}
+
+void Booking::cancelBooking() {
+    status = Cancelled;
+}
+
 bool Booking::isActive() const {
     return status == Active;
 }

@@ -26,6 +26,10 @@ double ACStation::calculatePricePerMin(const User* user) const {
     return baseRate - discount;
 }
 
+std::string ACStation::getType() const {
+    return "AC";
+}
+
 void ACStation::displayInfo() const {
     std::cout << "AC Station - " << stationID << " | "
               << locationName << " | "

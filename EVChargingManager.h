@@ -93,6 +93,8 @@ private:
     void loginUser();
     void searchAndBook(const std::string& userID);
     void viewMyBookings(const std::string& userID) const;
+    void viewMyActiveBooking(const std::string& userID) const;
+    void viewMyHistory(const std::string& userID) const;
     void cancelBookingForUser(const std::string& userID);
     void startSessionForUser(const std::string& userID);
     void endSessionForUser(const std::string& userID);

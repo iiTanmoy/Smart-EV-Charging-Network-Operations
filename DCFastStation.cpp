@@ -26,6 +26,10 @@ double DCFastStation::calculatePricePerMin(const User* user) const {
     return baseRate - discount;
 }
 
+std::string DCFastStation::getType() const {
+    return "DCFast";
+}
+
 void DCFastStation::displayInfo() const {
     std::cout << "DC Fast Station - " << stationID << " | "
               << locationName << " | "

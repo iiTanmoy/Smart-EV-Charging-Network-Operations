@@ -31,6 +31,8 @@ public:
 
     void startSession(time_t startTime);
     void endSession(time_t endTime);
+    void setStatus(int newStatus);
+    void cancelBooking();
     bool isActive() const;
     virtual double calculateCost() const;
     virtual void saveToCsv(std::ostream& out) const;
