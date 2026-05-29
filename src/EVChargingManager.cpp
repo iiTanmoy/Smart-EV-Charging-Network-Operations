@@ -58,9 +58,10 @@ struct HourCounter {
 };
 
 EVChargingManager::EVChargingManager()
-    : dataDir("data"), stationsFile("stations.csv"), usersFile("users.csv"),
-      bookingsFile("bookings.csv"), sessionsFile("sessions.log"),
-      backupFile(dataDir + "/backup.dat") {
+    : dataDir("data"), dbDir("db"), 
+      stationsFile("db/stations.csv"), usersFile("db/users.csv"),
+      bookingsFile("db/bookings.csv"), sessionsFile("data/sessions.log"),
+      backupFile("data/backup.dat") {
 }
 
 bool EVChargingManager::ensureDataDirectory() const {
@@ -71,9 +72,22 @@ bool EVChargingManager::ensureDataDirectory() const {
     return mkdir(dataDir.c_str(), 0755) == 0;
 }
 
+bool EVChargingManager::ensureDbDirectory() const {
+    struct stat st;
+    if (stat(dbDir.c_str(), &st) == 0) {
+        return S_ISDIR(st.st_mode);
+    }
+    return mkdir(dbDir.c_str(), 0755) == 0;
+}
+
 std::string EVChargingManager::buildDataPath(const std::string& fileName) const {
     ensureDataDirectory();
     return dataDir + "/" + fileName;
+}
+
+std::string EVChargingManager::buildDbPath(const std::string& fileName) const {
+    ensureDbDirectory();
+    return dbDir + "/" + fileName;
 }
 
 EVChargingManager::~EVChargingManager() {

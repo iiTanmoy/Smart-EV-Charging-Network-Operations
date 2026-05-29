@@ -23,6 +23,7 @@ private:
     std::queue<Booking*> activeBookings;
     std::vector<ChargingSession> completedSessions;
     std::string dataDir;
+    std::string dbDir;
     std::string stationsFile;
     std::string usersFile;
     std::string bookingsFile;
@@ -66,7 +67,9 @@ private:
     void backupSystem() const;
     void restoreSystem();
     bool ensureDataDirectory() const;
+    bool ensureDbDirectory() const;
     std::string buildDataPath(const std::string& fileName) const;
+    std::string buildDbPath(const std::string& fileName) const;
     std::string readLine(const char* prompt) const;
     int readInt(const char* prompt, int min, int max) const;
     double readDouble(const char* prompt, double min, double max) const;

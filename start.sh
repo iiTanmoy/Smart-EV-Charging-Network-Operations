@@ -1,3 +1,5 @@
-g++ -std=c++98 -Wall -pedantic main.cpp EVChargingManager.cpp Station.cpp ACStation.cpp DCFastStation.cpp DCUltraFastStation.cpp User.cpp RegularUser.cpp PremiumUser.cpp FleetUser.cpp Booking.cpp ChargingSession.cpp -o EVPlatform
-./EVPlatform
+#!/bin/bash
+cd /workspaces/Smart-EV-Charging-Network-Operations
+g++ -std=c++98 -Wall -pedantic src/*.cpp -o evmanager
+./evmanager
 
