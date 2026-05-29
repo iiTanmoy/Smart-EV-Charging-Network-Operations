@@ -19,8 +19,7 @@ int ACStation::getMaxSlots() const {
 }
 
 double ACStation::calculatePricePerMin(const User* user) const {
-    double baseRate = 0.15 * powerRating;
-    return baseRate;
+    return powerRating;
 }
 
 std::string ACStation::getType() const {

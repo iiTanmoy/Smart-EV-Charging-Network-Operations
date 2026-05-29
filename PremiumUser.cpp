@@ -17,11 +17,7 @@ std::string PremiumUser::getTier() const {
 }
 
 double PremiumUser::calculateDiscount(double basePrice) const {
-    double discount = basePrice * 0.10;
-    if (freeMinutes > 0) {
-        discount += 0.05 * basePrice;
-    }
-    return discount;
+    return 0.0;
 }
 
 void PremiumUser::displayInfo() const {

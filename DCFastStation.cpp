@@ -20,8 +20,7 @@ double DCFastStation::getMaxPower() const {
 
 double DCFastStation::calculatePricePerMin(const User* user) const {
     double effectivePower = maxPower > 0.0 ? maxPower : getPowerRating();
-    double baseRate = 0.30 * effectivePower;
-    return baseRate;
+    return effectivePower;
 }
 
 std::string DCFastStation::getType() const {

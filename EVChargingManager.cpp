@@ -118,7 +118,8 @@ double EVChargingManager::readDouble(const char* prompt, double min, double max)
 }
 
 void EVChargingManager::pause() const {
-    std::cout << "Press enter";
+    std::cout << "\n------------------------------------------------------------\n";
+    std::cout << "Press enter to continue...\n";
     std::cin.ignore(1000, '\n');
 }
 
@@ -484,7 +485,7 @@ Booking* EVChargingManager::findBooking(const std::string& bookingID) const {
 
 void EVChargingManager::mainMenu() {
     while (true) {
-        std::cout << "============================================================\n";
+        std::cout << "\n============================================================\n";
         std::cout << "     SMART EV CHARGING NETWORK OPERATIONS PLATFORM\n";
         std::cout << "                ChargeGrid Mobility Pvt. Ltd.\n";
         std::cout << "============================================================\n";
@@ -493,6 +494,7 @@ void EVChargingManager::mainMenu() {
         std::cout << "3. Analytics & Reports\n";
         std::cout << "4. System Backup & Restore\n";
         std::cout << "5. Exit\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice (1-5): ", 1, 5);
         if (choice == 1) {
             adminMenu();
@@ -510,11 +512,13 @@ void EVChargingManager::mainMenu() {
 
 void EVChargingManager::adminMenu() {
     while (true) {
+        std::cout << "\n==================== ADMIN PORTAL ====================\n";
         std::cout << "1. Station Management\n";
         std::cout << "2. User Management\n";
         std::cout << "3. View Real-time Station Status\n";
         std::cout << "4. Manage Active Bookings\n";
         std::cout << "5. Back to Main Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 5);
         if (choice == 1) {
             stationManagementMenu();
@@ -533,12 +537,14 @@ void EVChargingManager::adminMenu() {
 
 void EVChargingManager::stationManagementMenu() {
     while (true) {
+        std::cout << "\n------------------ STATION MANAGEMENT ------------------\n";
         std::cout << "1. Add New Charging Station\n";
         std::cout << "2. Remove Station\n";
         std::cout << "3. Update Station Status\n";
         std::cout << "4. List All Stations\n";
         std::cout << "5. Search Station by ID\n";
         std::cout << "6. Back to Admin Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 6);
         if (choice == 1) {
             addStation();
@@ -560,12 +566,14 @@ void EVChargingManager::stationManagementMenu() {
 
 void EVChargingManager::userManagementMenu() {
     while (true) {
+        std::cout << "\n------------------- USER MANAGEMENT --------------------\n";
         std::cout << "1. Add New User (Register)\n";
         std::cout << "2. Remove User\n";
         std::cout << "3. List All Users\n";
         std::cout << "4. Search User by ID\n";
         std::cout << "5. View User Details\n";
         std::cout << "6. Back to Admin Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 6);
         if (choice == 1) {
             addUser();
@@ -588,10 +596,12 @@ void EVChargingManager::userManagementMenu() {
 
 void EVChargingManager::activeBookingMenu() {
     while (true) {
+        std::cout << "\n------------------ ACTIVE BOOKINGS ---------------------\n";
         std::cout << "1. View All Active Bookings\n";
         std::cout << "2. Cancel Booking (Admin)\n";
         std::cout << "3. Force End Session\n";
         std::cout << "4. Back to Admin Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 4);
         if (choice == 1) {
             listAllBookings();
@@ -620,6 +630,7 @@ void EVChargingManager::activeBookingMenu() {
 
 void EVChargingManager::userPortal() {
     while (true) {
+        std::cout << "\n===================== USER PORTAL =======================\n";
         std::cout << "1. Register New User\n";
         std::cout << "2. Login\n";
         std::cout << "3. Search & Book Charging Slot\n";
@@ -627,23 +638,36 @@ void EVChargingManager::userPortal() {
         std::cout << "5. Cancel My Booking\n";
         std::cout << "6. View My History\n";
         std::cout << "7. Back to Main Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 7);
         if (choice == 1) {
             registerUser();
         } else if (choice == 2) {
             loginUser();
         } else if (choice == 3) {
-            std::string id = readLine("User ID: ");
+            std::string id = readLine("User ID (or type 'back' to return): ");
+            if (id == "back") {
+                continue;
+            }
             searchAndBook(id);
         } else if (choice == 4) {
-            std::string id = readLine("User ID: ");
+            std::string id = readLine("User ID (or type 'back' to return): ");
+            if (id == "back") {
+                continue;
+            }
             viewMyBookings(id);
             pause();
         } else if (choice == 5) {
-            std::string id = readLine("User ID: ");
+            std::string id = readLine("User ID (or type 'back' to return): ");
+            if (id == "back") {
+                continue;
+            }
             cancelBookingForUser(id);
         } else if (choice == 6) {
-            std::string id = readLine("User ID: ");
+            std::string id = readLine("User ID (or type 'back' to return): ");
+            if (id == "back") {
+                continue;
+            }
             viewMyHistory(id);
             pause();
         } else {
@@ -654,6 +678,7 @@ void EVChargingManager::userPortal() {
 
 void EVChargingManager::analyticsMenu() {
     while (true) {
+        std::cout << "\n================== ANALYTICS & REPORTS ==================\n";
         std::cout << "1. Revenue Summary Report (Current Month)\n";
         std::cout << "2. Station Utilization Report\n";
         std::cout << "3. Top 10 Highest Revenue Stations\n";
@@ -661,6 +686,7 @@ void EVChargingManager::analyticsMenu() {
         std::cout << "5. Peak Hour Utilization Analysis\n";
         std::cout << "6. Export Report to File\n";
         std::cout << "7. Back to Main Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 7);
         if (choice == 1) {
             revenueSummary();
@@ -688,12 +714,14 @@ void EVChargingManager::analyticsMenu() {
 
 void EVChargingManager::backupMenu() {
     while (true) {
+        std::cout << "\n==================== BACKUP & RESTORE ===================\n";
         std::cout << "1. Create Full System Backup\n";
         std::cout << "2. Restore System from Backup\n";
         std::cout << "3. Export All Stations to CSV\n";
         std::cout << "4. Export All Users to CSV\n";
         std::cout << "5. Export All Sessions Log\n";
         std::cout << "6. Back to Main Menu\n";
+        std::cout << "------------------------------------------------------------\n";
         int choice = readInt("Enter your choice: ", 1, 6);
         if (choice == 1) {
             backupSystem();
@@ -839,11 +867,17 @@ void EVChargingManager::registerUser() {
 }
 
 void EVChargingManager::loginUser() {
-    std::string id = readLine("User ID: ");
-    User* user = findUser(id);
-    if (user == 0) {
+    std::string id = readLine("User ID (or type 'back' to return): ");
+    if (id == "back") {
+        std::cout << "Returning to User Portal.\n";
         return;
     }
+    User* user = findUser(id);
+    if (user == 0) {
+        std::cout << "User ID not found. Please register or try again.\n";
+        return;
+    }
+    std::cout << "User successfully logged in: " << user->getUserID() << "\n";
     while (true) {
         std::cout << "\n========================================\n";
         std::cout << "1. Search Available Stations (with Recommendation)\n";
@@ -881,88 +915,123 @@ void EVChargingManager::searchAndBook(const std::string& userID) {
     if (user == 0) {
         return;
     }
-    std::string type = readLine("Station type (AC/DCFast/DCUltra/DC): ");
+    std::string tier = user->getTier();
+    std::cout << "\n Station Type Selection:\n";
+    std::cout << "0. Back\n";
+    std::cout << "1. AC Station\n";
+    std::cout << "2. DC Fast Station\n";
+    std::cout << "3. DC Ultra Fast Station\n";
+    std::cout << "4. Both DC Types\n";
+    int choice = readInt("Choose station type (0-4): ", 0, 4);
+    if (choice == 0) {
+        std::cout << "Booking cancelled. Returning to previous menu.\n";
+        return;
+    }
+    
     std::vector<Station*> available;
+    std::string selectedType = "";
+    
     for (std::map<std::string, Station*>::iterator it = stations.begin(); it != stations.end(); ++it) {
         Station* station = it->second;
         if (!station->isAvailable()) {
             continue;
         }
         std::string stationType = station->getType();
+        bool allowed = false;
         bool match = false;
-        if (type == "") {
-            match = true;
-        } else if (type == "AC") {
-            match = stationType == "AC";
-        } else if (type == "DC") {
-            match = stationType == "DCFast" || stationType == "DCUltra";
+        
+        if (tier == "Regular") {
+            allowed = (stationType == "AC");
         } else {
-            match = stationType == type;
+            allowed = true;
         }
-        if (match) {
+        
+        if (choice == 1 && stationType == "AC") {
+            match = true;
+            if (selectedType.empty()) selectedType = "AC";
+        } else if (choice == 2 && stationType == "DCFast") {
+            match = true;
+            if (selectedType.empty()) selectedType = "DCFast";
+        } else if (choice == 3 && stationType == "DCUltra") {
+            match = true;
+            if (selectedType.empty()) selectedType = "DCUltra";
+        } else if (choice == 4 && (stationType == "DCFast" || stationType == "DCUltra")) {
+            match = true;
+            if (selectedType.empty()) selectedType = "DC";
+        }
+        
+        if (match && allowed) {
             available.push_back(station);
         }
     }
+    
     if (available.empty()) {
-        if (type == "AC") {
-            std::cout << "No AC station is currently available.\n";
-        } else if (type == "DC") {
-            std::cout << "No DC station is currently available.\n";
-        } else if (type == "") {
-            std::cout << "No charging stations are currently available.\n";
-        } else {
-            std::cout << "No " << type << " station is currently available.\n";
-        }
+        std::cout << "No stations available for your selection and tier.\n";
         return;
     }
-    std::string preferred;
-    if (user->getTier() == "Fleet") {
-        preferred = "DCUltra";
-    } else if (user->getTier() == "Premium") {
-        preferred = "DCFast";
-    } else {
-        preferred = "AC";
-    }
-    std::cout << "Recommended station type for your tier: " << preferred << "\n";
-    for (std::vector<Station*>::iterator it = available.begin(); it != available.end(); ++it) {
-        if ((*it)->getType() == preferred) {
-            std::cout << "Recommended: ";
-            (*it)->displayInfo();
-        }
-    }
-    std::cout << "Available stations:\n";
+    
+    std::cout << "\nAvailable stations:\n";
     for (std::vector<Station*>::iterator it = available.begin(); it != available.end(); ++it) {
         (*it)->displayInfo();
     }
-    std::string sid = readLine("Station ID: ");
-    Station* station = findStation(sid);
-    if (station == 0 || !station->isAvailable()) {
-        std::cout << "Selected station is not available or invalid. Please choose another station.\n";
+    
+    std::string sid = readLine("Enter Station ID (or type 'back' to return): ");
+    if (sid == "back") {
+        std::cout << "Booking cancelled. Returning to previous menu.\n";
         return;
     }
+    Station* station = findStation(sid);
+    if (station == 0) {
+        std::cout << "Station ID not found.\n";
+        return;
+    }
+    if (!station->isAvailable()) {
+        std::cout << "Selected station is not available.\n";
+        return;
+    }
+    
+    bool stationAllowed = false;
+    if (tier == "Regular" && station->getType() == "AC") {
+        stationAllowed = true;
+    } else if (tier != "Regular") {
+        stationAllowed = true;
+    }
+    if (!stationAllowed) {
+        std::cout << "Regular tier users can only book AC stations.\n";
+        return;
+    }
+    
     int minutes = readInt("Duration minutes: ", 1, 240);
     double perMin = station->calculatePricePerMin(user);
     double estBase = perMin * minutes;
     double estDiscount = user->calculateDiscount(estBase);
     double estCost = estBase - estDiscount;
-    cout << "Estimated cost: " << estCost << " | Wallet: " << user->getWalletBalance() << "\n";
+    
+    std::cout << "Estimated cost: " << estCost << " | Wallet: " << user->getWalletBalance() << "\n";
     if (user->getWalletBalance() < estCost) {
-        cout << "Insufficient wallet balance to book.\n";
+        std::cout << "Insufficient wallet balance to book.\n";
         return;
     }
+    
     std::string bid = generateBookingId();
     time_t now = std::time(0);
     Booking* booking = createBooking(bid, station, user, minutes, now, now + minutes * 60, Booking::Booked);
     if (booking != 0) {
         station->setStatus(Station::Occupied);
         bookings.push_back(booking);
-        cout << "Successfully booked the slot. Booking number: " << bid << "\n";
+        std::cout << "Successfully booked the slot. Booking number: " << bid << "\n";
         saveBookings();
         saveStations();
     }
 }
 
 void EVChargingManager::viewMyBookings(const std::string& userID) const {
+    User* user = findUser(userID);
+    if (user == 0) {
+        std::cout << "User ID not found.\n";
+        return;
+    }
+    bool found = false;
     for (std::vector<Booking*>::const_iterator it = bookings.begin(); it != bookings.end(); ++it) {
         if ((*it)->getUser() != 0 && (*it)->getUser()->getUserID() == userID) {
             int status = (*it)->getStatus();
@@ -970,8 +1039,12 @@ void EVChargingManager::viewMyBookings(const std::string& userID) const {
                 std::cout << "Booking: " << (*it)->getBookingID() << " | Station: "
                           << ((*it)->getStation() ? (*it)->getStation()->getStationID() : "")
                           << " | Status: " << (status == Booking::Active ? "Active" : "Booked") << std::endl;
+                found = true;
             }
         }
+    }
+    if (!found) {
+        std::cout << "No active or upcoming bookings found for user " << userID << ".\n";
     }
 }
 
@@ -993,6 +1066,12 @@ void EVChargingManager::viewMyActiveBooking(const std::string& userID) const {
 }
 
 void EVChargingManager::viewMyHistory(const std::string& userID) const {
+    User* user = findUser(userID);
+    if (user == 0) {
+        std::cout << "User ID not found.\n";
+        return;
+    }
+    bool found = false;
     for (std::vector<Booking*>::const_iterator it = bookings.begin(); it != bookings.end(); ++it) {
         if ((*it)->getUser() != 0 && (*it)->getUser()->getUserID() == userID) {
             int status = (*it)->getStatus();
@@ -1000,22 +1079,37 @@ void EVChargingManager::viewMyHistory(const std::string& userID) const {
                 std::cout << "History: " << (*it)->getBookingID() << " | Station: "
                           << ((*it)->getStation() ? (*it)->getStation()->getStationID() : "")
                           << " | Status: " << (status == Booking::Completed ? "Completed" : "Cancelled") << std::endl;
+                found = true;
             }
         }
+    }
+    if (!found) {
+        std::cout << "No completed or cancelled bookings found for user " << userID << ".\n";
     }
 }
 
 void EVChargingManager::cancelBookingForUser(const std::string& userID) {
-    std::string bid = readLine("Booking ID: ");
-    Booking* booking = findBooking(bid);
-    if (booking != 0 && booking->getUser() != 0 && booking->getUser()->getUserID() == userID) {
-        booking->cancelBooking();
-        if (booking->getStation() != 0) {
-            booking->getStation()->setStatus(Station::Available);
-        }
-        saveBookings();
-        saveStations();
+    std::string bid = readLine("Booking ID (or type 'back' to return): ");
+    if (bid == "back") {
+        std::cout << "Cancel operation aborted.\n";
+        return;
     }
+    Booking* booking = findBooking(bid);
+    if (booking == 0) {
+        std::cout << "Booking ID not found.\n";
+        return;
+    }
+    if (booking->getUser() == 0 || booking->getUser()->getUserID() != userID) {
+        std::cout << "Booking does not belong to this user.\n";
+        return;
+    }
+    booking->cancelBooking();
+    if (booking->getStation() != 0) {
+        booking->getStation()->setStatus(Station::Available);
+    }
+    saveBookings();
+    saveStations();
+    std::cout << "Booking " << bid << " cancelled successfully.\n";
 }
 
 void EVChargingManager::startSessionForUser(const std::string& userID) {
@@ -1044,22 +1138,28 @@ void EVChargingManager::endSessionForUser(const std::string& userID) {
         if (booking->getStation() != 0) {
             booking->getStation()->setStatus(Station::Available);
         }
+        
+        // Charge for full booked duration regardless of actual session time
+        int bookedMinutes = booking->getSlotDuration();
+        double perMin = booking->getStation()->calculatePricePerMin(booking->getUser());
+        double baseCost = perMin * bookedMinutes;
+        double discount = booking->getUser()->calculateDiscount(baseCost);
+        double finalCost = baseCost - discount;
+        
+        // Calculate energy consumed based on booked duration
         double energy = 0.0;
-        double actualMinutes = difftime(booking->getEndTime(), booking->getStartTime()) / 60.0;
-        if (actualMinutes <= 0.0) {
-            actualMinutes = booking->getSlotDuration();
-        }
         if (booking->getStation() != 0) {
-            energy = booking->getStation()->getPowerRating() * actualMinutes / 60.0;
+            energy = booking->getStation()->getPowerRating() * bookedMinutes / 60.0;
         }
-        ChargingSession tempSession(booking->getBookingID(), booking->getStation(), booking->getUser(), booking->getSlotDuration(), booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, booking->calculateCost());
-        double finalCost = tempSession.calculateCost();
-        ChargingSession session(booking->getBookingID(), booking->getStation(), booking->getUser(), booking->getSlotDuration(), booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, finalCost);
+        
+        ChargingSession session(booking->getBookingID(), booking->getStation(), booking->getUser(), bookedMinutes, booking->getStartTime(), booking->getEndTime(), booking->getStatus(), energy, finalCost);
         completedSessions.push_back(session);
+        
         // deduct from wallet
         if (booking->getUser() != 0) {
             booking->getUser()->adjustWallet(-finalCost);
         }
+        
         logSession(session);
         saveBookings();
         saveStations();

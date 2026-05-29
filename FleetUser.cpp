@@ -18,7 +18,7 @@ std::string FleetUser::getTier() const {
 }
 
 double FleetUser::calculateDiscount(double basePrice) const {
-    return basePrice * 0.15;
+    return basePrice * 0.10;
 }
 
 void FleetUser::displayInfo() const {

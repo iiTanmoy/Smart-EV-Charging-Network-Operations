@@ -22,8 +22,7 @@ double DCUltraFastStation::getUltraPower() const {
 
 double DCUltraFastStation::calculatePricePerMin(const User* user) const {
     double effectivePower = ultraPower > 0.0 ? ultraPower : getPowerRating();
-    double baseRate = 0.45 * effectivePower;
-    return baseRate;
+    return effectivePower;
 }
 
 std::string DCUltraFastStation::getType() const {
