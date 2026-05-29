@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <ctime>
 #include <algorithm>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -57,9 +58,22 @@ struct HourCounter {
 };
 
 EVChargingManager::EVChargingManager()
-    : stationsFile("stations.csv"), usersFile("users.csv"),
+    : dataDir("data"), stationsFile("stations.csv"), usersFile("users.csv"),
       bookingsFile("bookings.csv"), sessionsFile("sessions.log"),
-      backupFile("backup.dat") {
+      backupFile(dataDir + "/backup.dat") {
+}
+
+bool EVChargingManager::ensureDataDirectory() const {
+    struct stat st;
+    if (stat(dataDir.c_str(), &st) == 0) {
+        return S_ISDIR(st.st_mode);
+    }
+    return mkdir(dataDir.c_str(), 0755) == 0;
+}
+
+std::string EVChargingManager::buildDataPath(const std::string& fileName) const {
+    ensureDataDirectory();
+    return dataDir + "/" + fileName;
 }
 
 EVChargingManager::~EVChargingManager() {
@@ -406,6 +420,10 @@ void EVChargingManager::logSession(const ChargingSession& session) {
 }
 
 void EVChargingManager::backupSystem() const {
+    if (!ensureDataDirectory()) {
+        std::cout << "Unable to create data directory for backup." << std::endl;
+        return;
+    }
     std::ostringstream ss;
     ss << "STATIONS\n";
     for (std::map<std::string, Station*>::const_iterator it = stations.begin(); it != stations.end(); ++it) {
@@ -425,9 +443,13 @@ void EVChargingManager::backupSystem() const {
     }
     std::string data = ss.str();
     std::ofstream out(backupFile.c_str(), std::ios::binary);
-    if (!out.is_open()) return;
+    if (!out.is_open()) {
+        std::cout << "Failed to write backup file to " << backupFile << std::endl;
+        return;
+    }
     out.write(data.c_str(), data.size());
     out.close();
+    std::cout << "Backup created: " << backupFile << std::endl;
 }
 
 void EVChargingManager::restoreSystem() {
@@ -1270,19 +1292,186 @@ void EVChargingManager::peakHourAnalysis() const {
 }
 
 void EVChargingManager::exportReports() const {
-    std::cout << "Export reports not implemented" << std::endl;
+    if (!ensureDataDirectory()) {
+        std::cout << "Unable to create data directory for analytics export." << std::endl;
+        return;
+    }
+    time_t now = time(0);
+    struct tm* tmv = localtime(&now);
+    char timestamp[32] = "unknown";
+    if (tmv != 0) {
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", tmv);
+    }
+    std::string fileName = buildDataPath(std::string("analytics_report_") + timestamp + ".txt");
+    std::ofstream out(fileName.c_str());
+    if (!out.is_open()) {
+        std::cout << "Failed to write analytics report to " << fileName << std::endl;
+        return;
+    }
+
+    out << "================== ANALYTICS REPORT ==================\n";
+    out << "Generated: " << asctime(tmv);
+    out << "\n";
+
+    time_t now2 = time(0);
+    struct tm* nowtm = localtime(&now2);
+    int currentMonth = nowtm ? nowtm->tm_mon : 0;
+    int currentYear = nowtm ? nowtm->tm_year : 0;
+    MonthlyRevenueCounter revenueCounter(currentMonth, currentYear);
+    std::for_each(completedSessions.begin(), completedSessions.end(), revenueCounter);
+    out << "Revenue Summary (current month): " << revenueCounter.total << "\n\n";
+
+    out << "Station Utilization Report:\n";
+    int totalSessions = completedSessions.size();
+    for (std::map<std::string, Station*>::const_iterator it = stations.begin(); it != stations.end(); ++it) {
+        int sessionCount = std::count_if(completedSessions.begin(), completedSessions.end(), StationSessionCount(it->first));
+        double pct = totalSessions > 0 ? (double)sessionCount * 100.0 / (double)totalSessions : 0.0;
+        out << it->first << " | " << it->second->getLocationName() << " | Sessions: " << sessionCount << " | Utilization%: " << pct << "\n";
+    }
+    out << "\n";
+
+    out << "Top 10 Highest Revenue Stations:\n";
+    std::map<std::string, double> stationRevenue;
+    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
+        std::string sid = it->getStation() ? it->getStation()->getStationID() : "";
+        if (sid != "") {
+            stationRevenue[sid] += it->getFinalCost();
+        }
+    }
+    std::vector<std::pair<std::string, double> > revenueList;
+    for (std::map<std::string, double>::const_iterator it = stationRevenue.begin(); it != stationRevenue.end(); ++it) {
+        revenueList.push_back(*it);
+    }
+    std::sort(revenueList.begin(), revenueList.end(), cmpRev);
+    int count = 0;
+    for (std::vector<std::pair<std::string, double> >::const_iterator it = revenueList.begin(); it != revenueList.end() && count < 10; ++it, ++count) {
+        out << "#" << (count + 1) << " " << it->first << " => " << it->second << "\n";
+    }
+    if (revenueList.empty()) {
+        out << "No revenue sessions available.\n";
+    }
+    out << "\n";
+
+    out << "Inactive Users (no session in last 30 days):\n";
+    time_t currentTime = time(0);
+    std::map<std::string, time_t> lastSession;
+    for (std::vector<ChargingSession>::const_iterator it = completedSessions.begin(); it != completedSessions.end(); ++it) {
+        std::string uid = it->getUser() ? it->getUser()->getUserID() : "";
+        if (uid != "") {
+            time_t end = it->getEndTime();
+            if (lastSession.find(uid) == lastSession.end() || lastSession[uid] < end) {
+                lastSession[uid] = end;
+            }
+        }
+    }
+    const time_t THIRTY_DAYS = 30 * 24 * 3600;
+    bool foundInactive = false;
+    for (std::map<std::string, User*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+        std::string uid = it->first;
+        if (lastSession.find(uid) == lastSession.end() || (currentTime - lastSession[uid]) > THIRTY_DAYS) {
+            foundInactive = true;
+            out << "Inactive: " << uid << " | " << it->second->getName() << "\n";
+        }
+    }
+    if (!foundInactive) {
+        out << "No inactive users in the last 30 days.\n";
+    }
+    out << "\n";
+
+    out << "Peak Hour Utilization Analysis:\n";
+    HourCounter hourCounter;
+    std::for_each(completedSessions.begin(), completedSessions.end(), hourCounter);
+    int maxCount = 0;
+    for (int i = 0; i < 24; ++i) {
+        if (hourCounter.counts[i] > 0) {
+            out << i << ": " << hourCounter.counts[i] << "\n";
+            if (hourCounter.counts[i] > maxCount) {
+                maxCount = hourCounter.counts[i];
+            }
+        }
+    }
+    out << "Top peak session count: " << maxCount << "\n";
+    out.close();
+    std::cout << "Analytics report exported to " << fileName << std::endl;
 }
 
 void EVChargingManager::exportStations() const {
-    std::cout << "Export stations not implemented" << std::endl;
+    if (!ensureDataDirectory()) {
+        std::cout << "Unable to create data directory for station export." << std::endl;
+        return;
+    }
+    time_t now = time(0);
+    struct tm* tmv = localtime(&now);
+    char timestamp[32] = "unknown";
+    if (tmv != 0) {
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", tmv);
+    }
+    std::string fileName = buildDataPath(std::string("stations_export_") + timestamp + ".csv");
+    std::ofstream out(fileName.c_str());
+    if (!out.is_open()) {
+        std::cout << "Failed to write stations export to " << fileName << std::endl;
+        return;
+    }
+    for (std::map<std::string, Station*>::const_iterator it = stations.begin(); it != stations.end(); ++it) {
+        it->second->saveToCsv(out);
+    }
+    out.close();
+    std::cout << "Stations exported to " << fileName << std::endl;
 }
 
 void EVChargingManager::exportUsers() const {
-    std::cout << "Export users not implemented" << std::endl;
+    if (!ensureDataDirectory()) {
+        std::cout << "Unable to create data directory for user export." << std::endl;
+        return;
+    }
+    time_t now = time(0);
+    struct tm* tmv = localtime(&now);
+    char timestamp[32] = "unknown";
+    if (tmv != 0) {
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", tmv);
+    }
+    std::string fileName = buildDataPath(std::string("users_export_") + timestamp + ".csv");
+    std::ofstream out(fileName.c_str());
+    if (!out.is_open()) {
+        std::cout << "Failed to write users export to " << fileName << std::endl;
+        return;
+    }
+    for (std::map<std::string, User*>::const_iterator it = users.begin(); it != users.end(); ++it) {
+        it->second->saveToCsv(out);
+    }
+    out.close();
+    std::cout << "Users exported to " << fileName << std::endl;
 }
 
 void EVChargingManager::exportSessions() const {
-    std::cout << "Export sessions not implemented" << std::endl;
+    if (!ensureDataDirectory()) {
+        std::cout << "Unable to create data directory for session export." << std::endl;
+        return;
+    }
+    std::ifstream in(sessionsFile.c_str());
+    if (!in.is_open()) {
+        std::cout << "Session log file not found: " << sessionsFile << std::endl;
+        return;
+    }
+    time_t now = time(0);
+    struct tm* tmv = localtime(&now);
+    char timestamp[32] = "unknown";
+    if (tmv != 0) {
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", tmv);
+    }
+    std::string fileName = buildDataPath(std::string("sessions_export_") + timestamp + ".log");
+    std::ofstream out(fileName.c_str());
+    if (!out.is_open()) {
+        std::cout << "Failed to write sessions export to " << fileName << std::endl;
+        return;
+    }
+    std::string line;
+    while (std::getline(in, line)) {
+        out << line << "\n";
+    }
+    in.close();
+    out.close();
+    std::cout << "Sessions exported to " << fileName << std::endl;
 }
 
 std::string EVChargingManager::generateBookingId() const {

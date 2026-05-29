@@ -1,0 +1,31 @@
+================== ANALYTICS REPORT ==================
+Generated: Fri May 29 07:02:45 2026
+
+Revenue Summary (current month): 0
+
+Station Utilization Report:
+ST001 | Anna Nagar AC Hub | Sessions: 0 | Utilization%: 0
+ST002 | Guindy DC Fast Charger | Sessions: 0 | Utilization%: 0
+ST003 | OMR Ultra Fast Station | Sessions: 0 | Utilization%: 0
+ST004 | Koyambedu AC Station | Sessions: 0 | Utilization%: 0
+ST005 | Velachery DC Fast | Sessions: 0 | Utilization%: 0
+ST006 | T Nagar Ultra Fast | Sessions: 0 | Utilization%: 0
+ST007 | Ambattur AC Hub | Sessions: 0 | Utilization%: 0
+ST008 | Chrompet DC Charger | Sessions: 0 | Utilization%: 0
+
+Top 10 Highest Revenue Stations:
+No revenue sessions available.
+
+Inactive Users (no session in last 30 days):
+Inactive: U001 | Ramesh Kumar
+Inactive: U002 | Priya Sharma
+Inactive: U003 | Suresh Reddy
+Inactive: U004 | Anjali Menon
+Inactive: U006 | Deepak Singh
+Inactive: U007 | Lakshmi Narayanan
+Inactive: U255 | Prantik
+Inactive: U420 | ROHIT
+Inactive: U500 | TANMOY
+
+Peak Hour Utilization Analysis:
+Top peak session count: 0
